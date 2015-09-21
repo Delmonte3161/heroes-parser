@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+	<changeSet author="CHANGEME" id="CHANGEME">
+		<createTable tableName="match">
+			<column name="id" type="INTEGER">
+				<constraints nullable="false" />
+			</column>
+			<column name="key" type="NVARCHAR(1000)">
+				<constraints nullable="false" />
+			</column>
+			<column name="date" type="TIMESTAMP">
+				<constraints nullable="false" />
+			</column>
+			<column name="type" type="NVARCHAR(1000)">
+				<constraints nullable="false" />
+			</column>
+			<column name="map" type="NVARCHAR(1000)">
+				<constraints nullable="false" />
+			</column>
+			<column name="winning_team_id" type="INTEGER">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<addPrimaryKey tableName="match" constraintName="match_pk"
+			columnNames="id" />
+
+		<createTable tableName="player">
+			<column name="id" type="INTEGER">
+				<constraints nullable="false" />
+			</column>
+			<column name="player_name" type="NVARCHAR(1000)">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<addPrimaryKey tableName="player" constraintName="player_pk"
+			columnNames="id" />
+
+		<createTable tableName="match_player_rel">
+			<column name="id" type="INTEGER">
+				<constraints nullable="false" />
+			</column>
+			<column name="match_id" type="INTEGER">
+				<constraints nullable="false" />
+			</column>
+			<column name="team_id" type="INTEGER">
+				<constraints nullable="false" />
+			</column>
+			<column name="player_id" type="INTEGER">
+				<constraints nullable="false" />
+			</column>
+			<column name="hero" type="NVARCHAR(1000)">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<addPrimaryKey tableName="match_player_rel"
+			constraintName="match_player_rel_pk" columnNames="id" />
+
+		<addForeignKeyConstraint baseTableName="match_player_rel"
+			constraintName="match_match_player_rel_fk" baseColumnNames="match_id"
+			referencedTableName="match" referencedColumnNames="id" />
+
+		<addForeignKeyConstraint baseTableName="match_player_rel"
+			constraintName="player_match_player_rel_fk" baseColumnNames="player_id"
+			referencedTableName="player" referencedColumnNames="id" />
+	</changeSet>
+</databaseChangeLog>
+

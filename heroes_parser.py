@@ -58,7 +58,7 @@ def GetDBConnection(config):
         conn = psycopg2.connect(host=host, port=port,database=dbname, user=user, password=password)
         return conn
     except:
-        print "Error connection to the database"
+        print "Error connecting to the database"
 
 def ProcessReplays(conn, path):
     print "Begin processing replays in path: " + path

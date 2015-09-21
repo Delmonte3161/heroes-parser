@@ -1,0 +1,45 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.cerner.cwx.infraoss.sandbox</groupId>
+  <artifactId>heroes-db</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>heroes-db</name>
+  <description>Liquibase project from creating and tracking changes to the database</description>
+  
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jdbc.driver>org.postgresql.Driver</jdbc.driver>
+    <jdbc.url>jdbc:postgresql://localhost/heroes</jdbc.url>
+    <jdbc.username>postgres</jdbc.username>
+    <jdbc.password></jdbc.password>
+
+  </properties>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-maven-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <changeLogFile>src/main/resources/heroes-db/master-changelog.xml</changeLogFile>
+          <driver>${jdbc.driver}</driver>
+          <url>${jdbc.url}</url>
+          <username>${jdbc.username}</username>
+          <password>${jdbc.password}</password>
+        </configuration>
+      </plugin>
+    </plugins>
+
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>9.4-1201-jdbc41</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+  
+</project>
