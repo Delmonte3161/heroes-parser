@@ -3,6 +3,7 @@ A Heroes of the Storm parser
 
 # heroes.ini
 This project will require a heroes.ini file in the root or the project.  It needs the following content:
+
 [Database]
 
 database.host=<host>
