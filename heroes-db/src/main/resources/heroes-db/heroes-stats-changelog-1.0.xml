@@ -6,7 +6,7 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 	<changeSet author="CHANGEME" id="CHANGEME">
 		<createTable tableName="match">
-			<column name="id" type="INTEGER">
+			<column name="id" type="INTEGER" autoIncrement="true" defaultValueSequenceNext="true">
 				<constraints nullable="false" />
 			</column>
 			<column name="key" type="NVARCHAR(1000)">
@@ -36,11 +36,12 @@
 				<constraints nullable="false" />
 			</column>
 		</createTable>
+		
 		<addPrimaryKey tableName="player" constraintName="player_pk"
 			columnNames="id" />
 
 		<createTable tableName="match_player_rel">
-			<column name="id" type="INTEGER">
+			<column name="id" type="INTEGER" autoIncrement="true" defaultValueSequenceNext="true">
 				<constraints nullable="false" />
 			</column>
 			<column name="match_id" type="INTEGER">
