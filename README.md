@@ -1,8 +1,8 @@
 # heroes-parser
-A Heroes of the Storm parser
+A Heroes of the Storm parser.  Simply execute heroes_parser.py.
 
 # heroes.ini
-This project will require a heroes.ini file in the root or the project.  It needs the following content:
+This project will require a heroes.ini file in the root of the project.  It needs the following content:
 
 [Database]
 
