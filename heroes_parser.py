@@ -4,6 +4,8 @@ import json
 import os
 import psycopg2
 import ConfigParser
+import datetime
+import sys
 
 
 def insert_match_record(conn, key, datestring, map, winning_team_id):
@@ -14,8 +16,9 @@ def insert_match_record(conn, key, datestring, map, winning_team_id):
     cursor.execute(query)
     rows = cursor.fetchall()
     if len(rows) == 0:
-        query = "insert into match (key, date, type, map, winning_team_id) VALUES (%s, to_timestamp(%s), 'unknown', %s, %s) returning id;"
-        data = (key, datestring, map, winning_team_id)
+        date = datetime.datetime.utcfromtimestamp(datestring)
+        query = "insert into match (key, date, type, map, winning_team_id) VALUES (%s, %s, 'unknown', %s, %s) returning id;"
+        data = (key, date, map, winning_team_id)
         cursor.execute(query, data)
         return cursor.fetchone()[0]
     else:
@@ -80,7 +83,7 @@ def process_replays(conn, path):
             data = json.loads(data_string.decode('utf-8', 'ignore'))
             details = data["raw"]["details"]
 
-            datestring = (details["m_timeUTC"] - 116444736000000000) / 10000
+            datestring = ((details["m_timeUTC"] - 116444736000000000) / 10000) /1000
             match_id += 1
             key = str(details["m_timeUTC"])
             winning_team_id = 0
@@ -100,7 +103,7 @@ def process_replays(conn, path):
             try:
                 match_id = insert_match_record(conn, key, datestring, details["m_title"], winning_team_id)
             except:
-                "Error in InsertMatchRecord"
+                print "Unexpected error:", sys.exc_info()
                 continue
 
             if match_id > 0:
