@@ -8,17 +8,17 @@ import datetime
 import sys
 
 
-def insert_match_record(conn, key, datestring, map, winning_team_id):
+def insert_match_record(conn, key, datestring, type, map, winning_team_id):
     print "insert_match_record: " + " : " + str(key) + " : " + str(datestring) + " : " + str(
-        map) + " : " + str(winning_team_id)
+        type) + " : " + str(map) + " : " + str(winning_team_id)
     cursor = conn.cursor()
     query = "select id from match where key = '" + key + "';"
     cursor.execute(query)
     rows = cursor.fetchall()
     if len(rows) == 0:
         date = datetime.datetime.utcfromtimestamp(datestring)
-        query = "insert into match (key, date, type, map, winning_team_id) VALUES (%s, %s, 'unknown', %s, %s) returning id;"
-        data = (key, date, map, winning_team_id)
+        query = "insert into match (key, date, type, map, winning_team_id) VALUES (%s, %s, %s, %s, %s) returning id;"
+        data = (key, date, type, map, winning_team_id)
         cursor.execute(query, data)
         return cursor.fetchone()[0]
     else:
@@ -73,17 +73,19 @@ def process_replays(conn, path):
     match_id = 0
     match_player_rel_id = 0
     for fn in os.listdir(path):
-        print fn
+        if fn.__contains__("(Training)"):
+            continue
+
         if fn.__contains__(".StormReplay"):
             replay_file = open(path + fn)
-            items = ["RawReplayDetails"]
+            items = ["RawReplayDetails", "RawReplayAttributesEvents"]
             retval = api.tasks.AnalyzeReplayFile(replay_file, items)
             replay_file.close()
             data_string = json.dumps(retval, skipkeys=False, ensure_ascii=False)
             data = json.loads(data_string.decode('utf-8', 'ignore'))
             details = data["raw"]["details"]
-
-            datestring = ((details["m_timeUTC"] - 116444736000000000) / 10000) /1000
+            attributes = data["raw"]["attributes_events"]
+            datestring = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
             match_id += 1
             key = str(details["m_timeUTC"])
             winning_team_id = 0
@@ -99,9 +101,12 @@ def process_replays(conn, path):
             if computer_found == 1:
                 continue
 
+            game_mode = get_game_mode(attributes)
+
+            map = details["m_title"]
             match_id = 0
             try:
-                match_id = insert_match_record(conn, key, datestring, details["m_title"], winning_team_id)
+                match_id = insert_match_record(conn, key, datestring, game_mode, map, winning_team_id)
             except:
                 print "Unexpected error:", sys.exc_info()
                 continue
@@ -115,10 +120,29 @@ def process_replays(conn, path):
                                                                 player["m_toon"]["m_id"], player["m_hero"])
                     except:
                         "Error in InsertPlayerRecord"
+                        
             # transactionally commit the match
             conn.commit()
 
             # break # uncomment to test just one match
+
+
+def get_game_mode(attributes):
+    for x in attributes["scopes"]["16"]["4010"]:
+        game_type = x["value"]
+    for y in attributes["scopes"]["16"]["4018"]:
+        draft_type = y["value"]
+    game_mode = "unknown"
+    if game_type == "stan":
+        game_mode = "Quick Match"
+    elif game_type == "priv":
+        game_mode = "Custom"
+    elif game_type == "drft":
+        if draft_type == "fcfs":
+            game_mode = "Team League"
+        else:
+            game_mode = "Hero League"
+    return game_mode
 
 
 def main():
@@ -129,10 +153,8 @@ def main():
     conn = get_db_connection(config)
     process_replays(conn, path)
 
-
 if __name__ == "__main__":
     main()
-
 
 
 
@@ -144,3 +166,11 @@ if __name__ == "__main__":
 
 
 # ,"RawReplayTrackerEvents","RawReplayAttributesEvents","RawReplayGameEvents","RawReplayMessageEvents","RawTalentSelectionGameEvents"
+
+# GameTypeAttribute = 3009,
+#
+# Character = 4002,
+# CharacterLevel = 4008,
+#
+# HeroSelectionMode = 4010,
+# HeroDraftMode = 4018
