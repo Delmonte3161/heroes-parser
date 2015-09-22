@@ -33,7 +33,7 @@ def insert_player_record(conn, player_id, player_name):
     cursor.execute(query)
     rows = cursor.fetchall()
     if len(rows) == 0:
-        query = "insert into player (id, player_name) VALUES (%s, %s);"
+        query = "insert into player (id, name) VALUES (%s, %s);"
         data = (player_id, player_name)
         cursor.execute(query, data)
     else:

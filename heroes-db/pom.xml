@@ -9,9 +9,9 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jdbc.driver>org.postgresql.Driver</jdbc.driver>
-    <jdbc.url>jdbc:postgresql://heroesdb.cscl7veahdl7.us-west-2.rds.amazonaws.com/heroes</jdbc.url>
-    <jdbc.username>root</jdbc.username>
-    <jdbc.password>Tasp1Admin1</jdbc.password>
+    <jdbc.url>jdbc:postgresql://localhost/heroes</jdbc.url>
+    <jdbc.username>postgres</jdbc.username>
+    <jdbc.password></jdbc.password>
 
   </properties>
   

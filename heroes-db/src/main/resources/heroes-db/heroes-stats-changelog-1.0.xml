@@ -6,7 +6,8 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 	<changeSet author="CHANGEME" id="CHANGEME">
 		<createTable tableName="match">
-			<column name="id" type="INTEGER" autoIncrement="true" defaultValueSequenceNext="true">
+			<column name="id" type="INTEGER" autoIncrement="true"
+				defaultValueSequenceNext="true">
 				<constraints nullable="false" />
 			</column>
 			<column name="key" type="NVARCHAR(1000)">
@@ -32,16 +33,17 @@
 			<column name="id" type="INTEGER">
 				<constraints nullable="false" />
 			</column>
-			<column name="player_name" type="NVARCHAR(1000)">
+			<column name="name" type="NVARCHAR(1000)">
 				<constraints nullable="false" />
 			</column>
 		</createTable>
-		
+
 		<addPrimaryKey tableName="player" constraintName="player_pk"
 			columnNames="id" />
 
 		<createTable tableName="match_player_rel">
-			<column name="id" type="INTEGER" autoIncrement="true" defaultValueSequenceNext="true">
+			<column name="id" type="INTEGER" autoIncrement="true"
+				defaultValueSequenceNext="true">
 				<constraints nullable="false" />
 			</column>
 			<column name="match_id" type="INTEGER">
@@ -57,6 +59,7 @@
 				<constraints nullable="false" />
 			</column>
 		</createTable>
+		
 		<addPrimaryKey tableName="match_player_rel"
 			constraintName="match_player_rel_pk" columnNames="id" />
 
@@ -67,6 +70,19 @@
 		<addForeignKeyConstraint baseTableName="match_player_rel"
 			constraintName="player_match_player_rel_fk" baseColumnNames="player_id"
 			referencedTableName="player" referencedColumnNames="id" />
+
+		<createIndex tableName="match" indexName="match_idx">
+			<column name="date" />
+		</createIndex>
+
+		<createIndex tableName="match" indexName="match_idx1"
+			unique="true">
+			<column name="key" />
+		</createIndex>
+
+		<createIndex tableName="player" indexName="player_idx">
+			<column name="name" />
+		</createIndex>
 	</changeSet>
 </databaseChangeLog>
 
