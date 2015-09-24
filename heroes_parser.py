@@ -67,64 +67,64 @@ def get_db_connection(config):
     except:
         print "Error connecting to the database"
 
+def process_replay(conn, fn):
+        replay_file = open(fn)
+        items = ["RawReplayDetails", "RawReplayAttributesEvents"]
+        retval = api.tasks.AnalyzeReplayFile(replay_file, items)
+        replay_file.close()
+        data_string = json.dumps(retval, skipkeys=False, ensure_ascii=False)
+        data = json.loads(data_string.decode('utf-8', 'ignore'))
+        details = data["raw"]["details"]
+        attributes = data["raw"]["attributes_events"]
+        datestring = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
+        key = str(details["m_timeUTC"])
+        winning_team_id = 0
+        computer_found = 0
+        for player in details["m_playerList"]:
+            key += ":" + str(player["m_toon"]["m_id"])
+            if player["m_result"] == 1:
+                winning_team_id = player["m_teamId"]
+            if player["m_toon"]["m_id"] == 0:
+                computer_found = 1
+                break
 
-def process_replays(conn, path):
+        if computer_found == 1:
+            return
+
+        game_mode = get_game_mode(attributes)
+
+        map = details["m_title"]
+        match_id = 0
+        try:
+            match_id = insert_match_record(conn, key, datestring, game_mode, map, winning_team_id)
+        except:
+            print "Unexpected error:", sys.exc_info()
+            return
+
+        if match_id > 0:
+            for player in details["m_playerList"]:
+                try:
+                    insert_player_record(conn, player["m_toon"]["m_id"], player["m_name"])
+                    insert_match_player_relationship_record(conn, match_id, player["m_teamId"],
+                                                            player["m_toon"]["m_id"], player["m_hero"])
+                except:
+                    "Error in InsertPlayerRecord"
+
+        # transactionally commit the match
+        conn.commit()
+
+
+def process_all_replays(conn, path):
     print "Begin processing replays in path: " + path
     match_id = 0
     match_player_rel_id = 0
     for fn in os.listdir(path):
         if fn.__contains__("(Training)"):
             continue
-
         if fn.__contains__(".StormReplay"):
-            replay_file = open(path + fn)
-            items = ["RawReplayDetails", "RawReplayAttributesEvents"]
-            retval = api.tasks.AnalyzeReplayFile(replay_file, items)
-            replay_file.close()
-            data_string = json.dumps(retval, skipkeys=False, ensure_ascii=False)
-            data = json.loads(data_string.decode('utf-8', 'ignore'))
-            details = data["raw"]["details"]
-            attributes = data["raw"]["attributes_events"]
-            datestring = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
-            match_id += 1
-            key = str(details["m_timeUTC"])
-            winning_team_id = 0
-            computer_found = 0
-            for player in details["m_playerList"]:
-                key += ":" + str(player["m_toon"]["m_id"])
-                if player["m_result"] == 1:
-                    winning_team_id = player["m_teamId"]
-                if player["m_toon"]["m_id"] == 0:
-                    computer_found = 1
-                    break
+            process_replay(conn,path + fn)
 
-            if computer_found == 1:
-                continue
-
-            game_mode = get_game_mode(attributes)
-
-            map = details["m_title"]
-            match_id = 0
-            try:
-                match_id = insert_match_record(conn, key, datestring, game_mode, map, winning_team_id)
-            except:
-                print "Unexpected error:", sys.exc_info()
-                continue
-
-            if match_id > 0:
-                for player in details["m_playerList"]:
-                    try:
-                        insert_player_record(conn, player["m_toon"]["m_id"], player["m_name"])
-                        match_player_rel_id += 1
-                        insert_match_player_relationship_record(conn, match_id, player["m_teamId"],
-                                                                player["m_toon"]["m_id"], player["m_hero"])
-                    except:
-                        "Error in InsertPlayerRecord"
-                        
-            # transactionally commit the match
-            conn.commit()
-
-            # break # uncomment to test just one match
+        # break # uncomment to test just one match
 
 
 def get_game_mode(attributes):
@@ -151,7 +151,7 @@ def main():
     config.read('heroes.ini')
     path = config.get('Replays', 'replays.path');
     conn = get_db_connection(config)
-    process_replays(conn, path)
+    process_all_replays(conn, path)
 
 if __name__ == "__main__":
     main()
