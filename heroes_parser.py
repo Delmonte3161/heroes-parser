@@ -8,15 +8,15 @@ import datetime
 import sys
 
 
-def insert_match_record(conn, key, datestring, type, map, winning_team_id):
-    print "insert_match_record: " + " : " + str(key) + " : " + str(datestring) + " : " + str(
+def insert_match_record(conn, key, match_date, type, map, winning_team_id):
+    print "insert_match_record: " + " : " + str(key) + " : " + str(match_date) + " : " + str(
         type) + " : " + str(map) + " : " + str(winning_team_id)
     cursor = conn.cursor()
     query = "select id from match where key = '" + key + "';"
     cursor.execute(query)
     rows = cursor.fetchall()
     if len(rows) == 0:
-        date = datetime.datetime.utcfromtimestamp(datestring)
+        date = datetime.datetime.utcfromtimestamp(match_date)
         query = "insert into match (key, date, type, map, winning_team_id) VALUES (%s, %s, %s, %s, %s) returning id;"
         data = (key, date, type, map, winning_team_id)
         cursor.execute(query, data)
@@ -51,11 +51,11 @@ def insert_match_player_relationship_record(conn, match_id, team_id, player_id, 
 
 
 def get_db_connection(config):
-    host = config.get('Database', 'database.host');
-    port = config.get('Database', 'database.port');
-    dbname = config.get('Database', 'database.dbname');
-    user = config.get('Database', 'database.user');
-    password = config.get('Database', 'database.password');
+    host = config.get('Database', 'database.host')
+    port = config.get('Database', 'database.port')
+    dbname = config.get('Database', 'database.dbname')
+    user = config.get('Database', 'database.user')
+    password = config.get('Database', 'database.password')
     print "Initializing connection to database..."
     print "host: " + host
     print "port " + port
@@ -67,51 +67,76 @@ def get_db_connection(config):
     except:
         print "Error connecting to the database"
 
+
+def get_match_winning_team(player_list):
+    for player in player_list:
+        if player["m_result"] == 1:
+            return player["m_teamId"]
+
+
+def generate_match_key(match_date, player_list):
+    key = str(match_date)
+    player_id_list = []
+    for player in player_list:
+        player_id_list.append(player["m_toon"]["m_id"])
+
+    # sort list to ensure consistent order of players across replays
+    player_id_list_sorted = sorted(player_id_list)
+    for player_id in player_id_list_sorted:
+        key += ":" + str(player_id)
+
+    return key
+
+
+def is_computer_player_present(player_list):
+    for player in player_list:
+        if player["m_toon"]["m_id"] == 0:
+            return 1
+    return 0
+
+
 def process_replay(conn, fn):
-        replay_file = open(fn)
-        items = ["RawReplayDetails", "RawReplayAttributesEvents"]
-        retval = api.tasks.AnalyzeReplayFile(replay_file, items)
-        replay_file.close()
-        data_string = json.dumps(retval, skipkeys=False, ensure_ascii=False)
-        data = json.loads(data_string.decode('utf-8', 'ignore'))
-        details = data["raw"]["details"]
-        attributes = data["raw"]["attributes_events"]
-        datestring = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
-        key = str(details["m_timeUTC"])
-        winning_team_id = 0
-        computer_found = 0
+    print "Processing replay file: " + fn
+    replay_file = open(fn)
+    items = ["RawReplayDetails", "RawReplayAttributesEvents"]
+    retval = api.tasks.AnalyzeReplayFile(replay_file, items)
+    replay_file.close()
+    data_string = json.dumps(retval, skipkeys=False, ensure_ascii=False)
+    data = json.loads(data_string.decode('utf-8', 'ignore'))
+    details = data["raw"]["details"]
+    attributes = data["raw"]["attributes_events"]
+
+    if is_computer_player_present(details["m_playerList"]) == 1 or len(details["m_playerList"]) < 10:
+        print "Computer Player found.  Skipping replay."
+        return
+
+    # this works for windows dates.  What about mac?  Will worry about it when I need to worry about it
+    match_date = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
+    key = generate_match_key(match_date, details["m_playerList"])
+    winning_team_id = get_match_winning_team(details["m_playerList"])
+    game_mode = get_game_mode(attributes)
+    map = details["m_title"]
+
+    match_id = 0
+    try:
+        match_id = insert_match_record(conn, key, match_date, game_mode, map, winning_team_id)
+    except:
+        conn.rollback()
+        print "Unexpected error:", sys.exc_info()
+        return
+
+    if match_id > 0:
         for player in details["m_playerList"]:
-            key += ":" + str(player["m_toon"]["m_id"])
-            if player["m_result"] == 1:
-                winning_team_id = player["m_teamId"]
-            if player["m_toon"]["m_id"] == 0:
-                computer_found = 1
-                break
+            try:
+                insert_player_record(conn, player["m_toon"]["m_id"], player["m_name"])
+                insert_match_player_relationship_record(conn, match_id, player["m_teamId"],
+                                                        player["m_toon"]["m_id"], player["m_hero"])
+            except:
+                conn.rollback()
+                "Error in InsertPlayerRecord"
 
-        if computer_found == 1:
-            return
-
-        game_mode = get_game_mode(attributes)
-
-        map = details["m_title"]
-        match_id = 0
-        try:
-            match_id = insert_match_record(conn, key, datestring, game_mode, map, winning_team_id)
-        except:
-            print "Unexpected error:", sys.exc_info()
-            return
-
-        if match_id > 0:
-            for player in details["m_playerList"]:
-                try:
-                    insert_player_record(conn, player["m_toon"]["m_id"], player["m_name"])
-                    insert_match_player_relationship_record(conn, match_id, player["m_teamId"],
-                                                            player["m_toon"]["m_id"], player["m_hero"])
-                except:
-                    "Error in InsertPlayerRecord"
-
-        # transactionally commit the match
-        conn.commit()
+    # transactionally commit the match
+    conn.commit()
 
 
 def process_all_replays(conn, path):
@@ -122,9 +147,9 @@ def process_all_replays(conn, path):
         if fn.__contains__("(Training)"):
             continue
         if fn.__contains__(".StormReplay"):
-            process_replay(conn,path + fn)
+            process_replay(conn, path + fn)
 
-        # break # uncomment to test just one match
+            # break # uncomment to test just one match
 
 
 def get_game_mode(attributes):
@@ -152,6 +177,7 @@ def main():
     path = config.get('Replays', 'replays.path');
     conn = get_db_connection(config)
     process_all_replays(conn, path)
+
 
 if __name__ == "__main__":
     main()
