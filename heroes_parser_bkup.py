@@ -189,20 +189,33 @@ def main():
 def check_replay():
     fn = '/Users/ds3161/Google Drive/Replays/Kenny/Multiplayer/Battlefield of Eternity (63).StormReplay'
     replay_data = get_replay_dict(fn)
+
     with open("/Users/ds3161/GitHub/heroes-parser/samples/" + "Battlefield of Eternity (63).StormReplay" + ".json",
               'w') as outfile:
         json.dump(replay_data, outfile, skipkeys=False, ensure_ascii=False)
 
-    fn = '/Users/ds3161/Google Drive/Replays/Multiplayer/Garden of Terror (162).StormReplay'
-    replay_data = get_replay_dict(fn)
-    with open("/Users/ds3161/GitHub/heroes-parser/samples/" + "Garden of Terror (162).StormReplay"  + ".json",
-              'w') as outfile:
-        json.dump(replay_data, outfile, skipkeys=False, ensure_ascii=False)
+        # data = json.loads(replay_data.decode('utf-8', 'ignore'))
+        # details = data["raw"]["details"]
+        # match_date = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
+        # date = datetime.datetime.utcfromtimestamp(match_date)
+        # print date
+
+        # fn = '/Users/ds3161/Google Drive/Replays/Multiplayer/Garden of Terror (162).StormReplay'
+        # replay_data = get_replay_data(fn)
+        # with open("/Users/ds3161/GitHub/heroes-parser/samples/" + "Garden of Terror (162).StormReplay" + ".json",
+        #           'w') as outfile:
+        #     json.dump(replay_data, outfile, skipkeys=True, ensure_ascii=False)
+
+        # details = data["raw"]["details"]
+        # match_date = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
+        # date = datetime.datetime.utcfromtimestamp(match_date)
+        # print date
 
 
 if __name__ == "__main__":
-    main()
-    #check_replay()
+    # main()
+    check_replay()
+
 
 # print data_string
 
