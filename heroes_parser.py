@@ -41,7 +41,7 @@ def insert_player_record(conn, player_id, player_name):
 
 
 def insert_match_player_relationship_record(conn, match_id, team_id, player_id, hero):
-    print "insert_match_player_relationship_record: " + str(id) + " : " + str(match_id) + " : " + str(
+    print "insert_match_player_relationship_record: " + str(match_id) + " : " + str(
         team_id) + " : " + str(
         player_id) + " : " + str(hero)
     cursor = conn.cursor()
@@ -74,8 +74,8 @@ def get_match_winning_team(player_list):
             return player["m_teamId"]
 
 
-def generate_match_key(match_date, player_list):
-    key = str(match_date)
+def generate_match_key(match_random_id, player_list):
+    key = str(match_random_id)
     player_id_list = []
     for player in player_list:
         player_id_list.append(player["m_toon"]["m_id"])
@@ -97,7 +97,8 @@ def is_computer_player_present(player_list):
 
 def get_replay_dict(fn):
     replay_file = open(fn)
-    items = ["RawReplayDetails", "RawReplayAttributesEvents"]
+    #    items = ["RawReplayDetails", "RawReplayAttributesEvents"]
+    items = ["RawReplayDetails", "RawReplayAttributesEvents", "RawReplayInitData"]
     retval = api.tasks.AnalyzeReplayFile(replay_file, items)
     replay_file.close()
     return retval
@@ -115,15 +116,16 @@ def process_replay(conn, replay_data):
         print "Computer Player found.  Skipping replay."
         return
 
-    # this works for windows dates.  What about mac?  Will worry about it when I need to worry about it
-    match_date = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
-    key = generate_match_key(match_date, details["m_playerList"])
+    match_random_id = replay_data["raw"]["init_data"]["m_syncLobbyState"]["m_gameDescription"]["m_randomValue"]
+    key = generate_match_key(match_random_id, details["m_playerList"])
     winning_team_id = get_match_winning_team(details["m_playerList"])
     game_mode = get_game_mode(attributes)
     map = details["m_title"]
 
     match_id = 0
     try:
+        # this works for windows dates.  What about mac?  Will worry about it when I need to worry about it
+        match_date = ((details["m_timeUTC"] - 116444736000000000) / 10000) / 1000
         match_id = insert_match_record(conn, key, match_date, game_mode, map, winning_team_id)
     except:
         conn.rollback()
@@ -187,6 +189,12 @@ def main():
 
 
 def check_replay():
+    fn = '/Users/ds3161/Google Drive/Replays/Kenny/Multiplayer/Garden of Terror (60).StormReplay'
+    replay_data = get_replay_dict(fn)
+    with open("/Users/ds3161/GitHub/heroes-parser/samples/" + "Garden of Terror (60).StormReplay" + ".json",
+              'w') as outfile:
+        json.dump(replay_data, outfile, skipkeys=False, ensure_ascii=False)
+
     fn = '/Users/ds3161/Google Drive/Replays/Kenny/Multiplayer/Battlefield of Eternity (63).StormReplay'
     replay_data = get_replay_dict(fn)
     with open("/Users/ds3161/GitHub/heroes-parser/samples/" + "Battlefield of Eternity (63).StormReplay" + ".json",
@@ -195,28 +203,28 @@ def check_replay():
 
     fn = '/Users/ds3161/Google Drive/Replays/Multiplayer/Garden of Terror (162).StormReplay'
     replay_data = get_replay_dict(fn)
-    with open("/Users/ds3161/GitHub/heroes-parser/samples/" + "Garden of Terror (162).StormReplay"  + ".json",
+    with open("/Users/ds3161/GitHub/heroes-parser/samples/" + "Garden of Terror (162).StormReplay" + ".json",
               'w') as outfile:
         json.dump(replay_data, outfile, skipkeys=False, ensure_ascii=False)
 
 
 if __name__ == "__main__":
     main()
-    #check_replay()
+    # check_replay()
 
-# print data_string
+    # print data_string
 
-#        # write the json file
-#        with open('/Users/ds3161/parses/' + fn + ".json", 'w') as outfile:
-#            json.dump(retval, outfile,skipkeys=False,ensure_ascii=False)
+    #        # write the json file
+    #        with open('/Users/ds3161/parses/' + fn + ".json", 'w') as outfile:
+    #            json.dump(retval, outfile,skipkeys=False,ensure_ascii=False)
 
 
-# ,"RawReplayTrackerEvents","RawReplayAttributesEvents","RawReplayGameEvents","RawReplayMessageEvents","RawTalentSelectionGameEvents"
+    # ,"RawReplayTrackerEvents","RawReplayAttributesEvents","RawReplayGameEvents","RawReplayMessageEvents","RawTalentSelectionGameEvents"
 
-# GameTypeAttribute = 3009,
-#
-# Character = 4002,
-# CharacterLevel = 4008,
-#
-# HeroSelectionMode = 4010,
-# HeroDraftMode = 4018
+    # GameTypeAttribute = 3009,
+    #
+    # Character = 4002,
+    # CharacterLevel = 4008,
+    #
+    # HeroSelectionMode = 4010,
+    # HeroDraftMode = 4018

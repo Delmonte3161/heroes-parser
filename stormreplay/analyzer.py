@@ -62,6 +62,26 @@ class StormReplayAnalyzer:
     def __init__(self, reader):
         self.reader = reader
 
+    def getReplayFileByteSize(self):
+        return self.reader.getReplayFileByteSize()
+
+    def getTalentSelectionGameEvents(self):
+        events = []
+        for event in self.reader.getReplayGameEvents():
+            if (event['_event'] != 'NNet.Game.SHeroTalentTreeSelectedEvent'):
+                continue
+            events.append(event)
+        return events
+
+    def getReplayProtocolVersion(self):
+        return self.reader.getReplayProtocolVersion()
+
+    def getReplayInitData(self):
+        return self.reader.getReplayInitData()
+
+    def getReplayAttributesEvents(self):
+        return self.reader.getReplayAttributesEvents()
+
     def analyze(self, fieldMappings=None):
         if fieldMappings is None:
             fieldMappings = defaultFieldMappings
@@ -77,7 +97,7 @@ class StormReplayAnalyzer:
 
                 key = keyPath[0]
 
-                isArray = isinstance(key, (int, long)) 
+                isArray = isinstance(key, (int, long))
                 if isArray and key >= len(obj):
                     obj.extend([None]*(key + 1 - len(obj)))
 
@@ -119,26 +139,6 @@ class StormReplayAnalyzer:
                     raise Exception('Key of invalid type: %s' % str(key))
 
         return retval
-
-    def getReplayFileByteSize(self):
-        return self.reader.getReplayFileByteSize()
-
-    def getTalentSelectionGameEvents(self):
-        events = []
-        for event in self.reader.getReplayGameEvents():
-            if (event['_event'] != 'NNet.Game.SHeroTalentTreeSelectedEvent'):
-                continue
-            events.append(event)
-        return events
-
-    def getReplayProtocolVersion(self):
-        return self.reader.getReplayProtocolVersion()
-
-    def getReplayInitData(self):
-        return self.reader.getReplayInitData()
-
-    def getReplayAttributesEvents(self):
-        return self.reader.getReplayAttributesEvents()
 
     def getReplayDetails(self):
         return self.reader.getReplayDetails()

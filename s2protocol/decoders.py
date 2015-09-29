@@ -56,7 +56,8 @@ class BitPackedBuffer:
         data = self._data[self._used:self._used + bytes]
         self._used += bytes
         if len(data) != bytes:
-            raise TruncatedError(self)
+            return data
+            # ds3161 raise TruncatedError(self)
         return data
 
     def read_bits(self, bits):
@@ -65,7 +66,8 @@ class BitPackedBuffer:
         while resultbits != bits:
             if self._nextbits == 0:
                 if self.done():
-                    raise TruncatedError(self)
+                    return result
+                    # ds3161 raise TruncatedError(self)
                 self._next = ord(self._data[self._used])
                 self._used += 1
                 self._nextbits = 8

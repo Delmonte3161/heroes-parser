@@ -143,7 +143,8 @@ def main():
     player_list = config.get('CompAnalysis', 'comp.player_list').split(',')
     # game_type = config.get('CompAnalysis', 'comp.game_type')
 
-    # date_begin = datetime.datetime.now() - datetime.timedelta(days=60)
+    #date_begin = datetime.date(2015, 8, 18)
+    #date_begin = datetime.datetime.now() - datetime.timedelta(days=14)
     # date_end = datetime.datetime.now() - datetime.timedelta(days=30)
     date_begin = None
     date_end = None
