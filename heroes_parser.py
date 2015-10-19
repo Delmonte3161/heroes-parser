@@ -148,24 +148,33 @@ def process_replay(conn, replay_data):
 
 def process_all_replays(conn, path):
     print "Begin processing replays in path: " + path
-    for fn in os.listdir(path):
-        if fn.__contains__("Training"):
-            continue
-        if fn.__contains__(".StormReplay"):
-            print "Processing replay file: " + path + fn
-            replay_data = get_replay_dict(path + fn)
+    for root, directories, filenames in os.walk(path):
+        for filename in filenames:
+            full_filename = os.path.join(root,filename)
 
-            # translate to and from json to remove some funky stuff that is in the original dict
-            replay_data_json = get_json_data(replay_data)
-            replay_data = json.loads(replay_data_json.decode('utf-8', 'ignore'))
-            process_replay(conn, replay_data)
+            if full_filename.__contains__("Training"):
+                continue
+            if full_filename.__contains__(".StormReplay"):
+                print "Processing replay file: " + full_filename
+                replay_data = get_replay_dict(full_filename)
 
+                # translate to and from json to remove some funky stuff that is in the original dict
+                replay_data_json = get_json_data(replay_data)
+                replay_data = json.loads(replay_data_json.decode('utf-8', 'ignore'))
+                process_replay(conn, replay_data)
+
+                # break
 
 def get_game_mode(attributes):
-    for x in attributes["scopes"]["16"]["4010"]:
-        game_type = x["value"]
-    for y in attributes["scopes"]["16"]["4018"]:
-        draft_type = y["value"]
+    try:
+        for x in attributes["scopes"]["16"]["4010"]:
+            game_type = x["value"]
+        for y in attributes["scopes"]["16"]["4018"]:
+            draft_type = y["value"]
+    except:
+        game_type = "stan"
+        draft_type = "stan"
+
     game_mode = "unknown"
     if game_type == "stan":
         game_mode = "Quick Match"
